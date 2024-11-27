@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push
 
 on:
   release:
@@ -10,6 +10,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+  
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -24,3 +36,25 @@ jobs:
           tags: |
             aptechnology/balneabilidade_tools:latest
             aptechnology/balneabilidade_tools:${{ github.event.release.tag_name }}
+
+      - name: Deploy to Cloud Run  
+        uses: google-github-actions/deploy-cloudrun@v2  
+        with:  
+          image: docker.io/aptechnology/balneabilidade_tools:latest  
+          service: balneabilidade-tools
+          revision_traffic: 'LATEST=100'
+          env_vars: |-            
+            DB_PORT=${{ vars.DB_PORT }}
+            SUPABASE_LATEST_KEY=${{ vars.SUPABASE_LATEST_KEY }}
+            SUPABASE_LATEST_BUCKET=${{ vars.SUPABASE_LATEST_BUCKET }}
+            SUPABASE_HISTORY_BUCKET=${{ vars.SUPABASE_HISTORY_BUCKET }}
+            MAX_BACKUP_QTY=${{ vars.MAX_BACKUP_QTY }}      
+          secrets: |-
+            API_KEYS=${{ secrets.API_KEYS }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          secrets_update_strategy: 'overwrite'
