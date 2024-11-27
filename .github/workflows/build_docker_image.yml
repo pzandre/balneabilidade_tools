@@ -53,7 +53,6 @@ jobs:
             SUPABASE_LATEST_BUCKET=${{ vars.SUPABASE_LATEST_BUCKET }}
             SUPABASE_HISTORY_BUCKET=${{ vars.SUPABASE_HISTORY_BUCKET }}
             MAX_BACKUP_QTY=${{ vars.MAX_BACKUP_QTY }}      
-          secrets: |-
             API_KEYS=${{ secrets.API_KEYS }}
             DB_HOST=${{ secrets.DB_HOST }}
             DB_NAME=${{ secrets.DB_NAME }}
@@ -61,4 +60,3 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
-          secrets_update_strategy: 'merge'
