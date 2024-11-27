@@ -61,4 +61,4 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
-          secrets_update_strategy: 'overwrite'
+          secrets_update_strategy: 'merge'
