@@ -46,6 +46,7 @@ jobs:
           image: docker.io/aptechnology/balneabilidade_tools:latest  
           service: balneabilidade-tools
           revision_traffic: 'LATEST=100'
+          region: ${{ vars.GCP_REGION }}
           env_vars: |-            
             DB_PORT=${{ vars.DB_PORT }}
             SUPABASE_LATEST_KEY=${{ vars.SUPABASE_LATEST_KEY }}
