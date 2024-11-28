@@ -1,8 +1,8 @@
-import concurrent.futures
-import logging
-import os
-import subprocess
-from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, wait
+from logging import error, info
+from os import environ, path
+from subprocess import CalledProcessError, run
+from uuid import uuid4
 
 from supabase import Client, create_client
 
@@ -60,10 +60,10 @@ def perform_database_restore(backup_file: bytes) -> bool:
     ]
 
     try:
-        pg_env = os.environ.copy()
+        pg_env = environ.copy()
         pg_env["PGPASSWORD"] = DB_PASSWORD
 
-        result = subprocess.run(
+        result = run(
             pg_restore_command,
             env=pg_env,
             input=backup_file,
@@ -72,18 +72,18 @@ def perform_database_restore(backup_file: bytes) -> bool:
         )
 
         if result.returncode == 0:
-            logging.info(f"Restore of database {DB_NAME} completed successfully")
+            info(f"Restore of database {DB_NAME} completed successfully")
             return True
         else:
-            logging.error(f"Error: Restore of database {DB_NAME} failed")
-            logging.error(f"Error output: {result.stderr}")
+            error(f"Error: Restore of database {DB_NAME} failed")
+            error(f"Error output: {result.stderr}")
             return False
 
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error executing pg_restore: {e}")
+    except CalledProcessError as e:
+        error(f"Error executing pg_restore: {e}")
         return False
     except Exception as e:
-        logging.error(f"Unexpected error during restore: {e}")
+        error(f"Unexpected error during restore: {e}")
         return False
 
 
@@ -115,26 +115,24 @@ def perform_database_dump(backup_file: str) -> bool:
     ]
 
     try:
-        pg_env = os.environ.copy()
+        pg_env = environ.copy()
         pg_env["PGPASSWORD"] = DB_PASSWORD
 
-        result = subprocess.run(
-            pg_dump_command, env=pg_env, capture_output=True, text=True
-        )
+        result = run(pg_dump_command, env=pg_env, capture_output=True, text=True)
 
         if result.returncode == 0:
-            logging.info(f"Backup of database {DB_NAME} completed successfully")
+            info(f"Backup of database {DB_NAME} completed successfully")
             return True
         else:
-            logging.error(f"Error: Backup of database {DB_NAME} failed")
-            logging.error(f"Error output: {result.stderr}")
+            error(f"Error: Backup of database {DB_NAME} failed")
+            error(f"Error output: {result.stderr}")
             return False
 
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error executing pg_dump: {e}")
+    except CalledProcessError as e:
+        error(f"Error executing pg_dump: {e}")
         return False
     except Exception as e:
-        logging.error(f"Unexpected error during backup: {e}")
+        error(f"Unexpected error during backup: {e}")
         return False
 
 
@@ -153,8 +151,7 @@ def clean_historic_bucket(supabase_client: Client):
 
 
 def initiate_backup_process():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_file = os.path.join(BACKUP_DIR, f"{DB_NAME}_{timestamp}.pgdump")
+    backup_file = path.join(BACKUP_DIR, f"{DB_NAME}_{uuid4()}.pgdump")
 
     backup_success = perform_database_dump(backup_file)
 
@@ -162,7 +159,7 @@ def initiate_backup_process():
         raise Exception("Backup failed")
 
     supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [
             executor.submit(
                 upload_to_supabase,
@@ -180,7 +177,7 @@ def initiate_backup_process():
             ),
             executor.submit(clean_historic_bucket, supabase_client),
         ]
-        concurrent.futures.wait(futures)
+        wait(futures)
 
 
 def get_restore_file_from_supabase(key: str, bucket_name: str) -> bytes:
