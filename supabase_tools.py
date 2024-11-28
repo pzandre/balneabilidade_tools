@@ -147,7 +147,7 @@ def clean_historic_bucket(supabase_client: Client):
             "sortBy": {"column": "created_at", "order": "desc"},
         },
     )
-    if len(response > MAX_BACKUP_QTY):
+    if len(response) > MAX_BACKUP_QTY:
         files_to_delete = response[MAX_BACKUP_QTY:]
         supabase_client.storage.from_(SUPABASE_HISTORY_BUCKET).remove(files_to_delete)
 
@@ -180,7 +180,7 @@ def initiate_backup_process():
             ),
         ]
         concurrent.futures.wait(futures)
-        clean_historic_bucket(supabase_client)
+    clean_historic_bucket(supabase_client)
 
 
 def get_restore_file_from_supabase(key: str, bucket_name: str) -> bytes:
