@@ -64,14 +64,19 @@ jobs:
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
 
-      - name: Remove older revisions
+      - name: Delete old revisions
         run: |
-          gcloud run revisions list \
-            --region ${{ vars.GCP_REGION }} \
+          revisions=$(gcloud run revisions list \
             --service balneabilidade-tools \
-            --format="value(REVISION)" \
-            | tail -n +6 \
-            | xargs -I {} \
-            gcloud run revisions delete {} \
             --region ${{ vars.GCP_REGION }} \
-            --quiet
+            --format="value(metadata.name)" \
+            --sort-by=~createTime)
+
+          revisions_to_delete=$(echo "$revisions" | tail -n +3)
+
+          for revision in $revisions_to_delete; do
+            echo "Deleting revision: $revision"
+            gcloud run revisions delete $revision \
+              --region ${{ vars.GCP_REGION }} \
+              --quiet
+          done
