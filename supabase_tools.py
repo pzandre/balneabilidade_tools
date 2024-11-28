@@ -140,7 +140,7 @@ def perform_database_dump(backup_file: str) -> bool:
 
 def clean_historic_bucket(supabase_client: Client):
     response: list = supabase_client.storage.from_(SUPABASE_HISTORY_BUCKET).list(
-        "folder",
+        "",
         {
             "limit": 20,
             "offset": 0,
@@ -178,9 +178,9 @@ def initiate_backup_process():
                 f"{DB_NAME}_{timestamp}.pgdump",
                 SUPABASE_HISTORY_BUCKET,
             ),
+            executor.submit(clean_historic_bucket, supabase_client),
         ]
         concurrent.futures.wait(futures)
-    clean_historic_bucket(supabase_client)
 
 
 def get_restore_file_from_supabase(key: str, bucket_name: str) -> bytes:
