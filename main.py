@@ -1,8 +1,4 @@
-import os
-
-from fastapi import FastAPI, Security
-from fastapi.exceptions import HTTPException
-from fastapi.security import APIKeyHeader
+from fastapi import FastAPI
 
 from schemas import RestorePayload
 from supabase_tools import initiate_backup_process, initiate_restore_process
@@ -15,20 +11,8 @@ app = FastAPI(
 )
 
 
-def validate_api_key(
-    api_key: str = Security(
-        APIKeyHeader(name="X-API-Key", scheme_name="API key", auto_error=True)
-    )
-):
-    if api_key not in os.environ.get("API_KEYS", "").split(","):
-        raise HTTPException(
-            status_code=403, detail={"success": False, "error": "Invalid API key"}
-        )
-    return True
-
-
 @app.post("/management/initiate_backup_process")
-async def initiate_backup(api_key: bool = Security(validate_api_key)):
+async def initiate_backup():
     try:
         initiate_backup_process()
         return {"detail": {"success": True, "error": ""}}
@@ -37,9 +21,7 @@ async def initiate_backup(api_key: bool = Security(validate_api_key)):
 
 
 @app.post("/management/initiate_restore_process")
-async def initiate_restore(
-    restore_info: RestorePayload, api_key=Security(validate_api_key)
-):
+async def initiate_restore(restore_info: RestorePayload):
     try:
         initiate_restore_process(restore_info.key, restore_info.bucket_name)
         return {"detail": {"success": True, "error": ""}}
