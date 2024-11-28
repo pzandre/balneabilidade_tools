@@ -148,7 +148,7 @@ def clean_historic_bucket(supabase_client: Client):
         },
     )
     if len(response) > MAX_BACKUP_QTY:
-        files_to_delete = response[MAX_BACKUP_QTY:]
+        files_to_delete = [item.get("name") for item in response[MAX_BACKUP_QTY:]]
         supabase_client.storage.from_(SUPABASE_HISTORY_BUCKET).remove(files_to_delete)
 
 
